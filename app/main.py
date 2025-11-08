@@ -13,12 +13,20 @@ def handle_exit(arguments):
     else:
         print("invalid argument")
 
+def handle_type(arguments):
+    for args in arguments:
+        if args in COMMAND_MAP:
+            print(f"{args} is a shell builtin")
+        else:
+            print(f"{args}: not found")
+
 def error_msg(command_name):
     print(f"{command_name}: command not found")
 
 COMMAND_MAP = {
     "echo": handle_echo,
-    "exit": handle_exit
+    "exit": handle_exit,
+    "type": handle_type
 }
 
 def main():
