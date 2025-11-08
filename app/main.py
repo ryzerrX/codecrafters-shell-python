@@ -5,10 +5,10 @@ def handle_echo(arguments):
 
 def handle_exit(arguments):
     if '0' in arguments:
-        print("Exiting with status 0 (success)")
+        # print("Exiting with status 0 (success)")
         sys.exit(0)
     elif '1' in arguments:
-        print("Exiting with status 1 (error)")
+        # print("Exiting with status 1 (error)")
         sys.exit(1)
     else:
         print("invalid argument")
@@ -47,15 +47,6 @@ def main():
         else:
             error_msg(command_name)
 
-        # if user_command == "exit 0" or user_command == "exit 1":
-        #     break
-        # elif user_command[:5] == "echo ":
-        #     cmd_echo(user_command)
-        # else:
-        #     error_msg(user_command)
-
-# def cmd_echo(user_command):
-#     print(user_command[5:])
 
 if __name__ == "__main__":
     main()
