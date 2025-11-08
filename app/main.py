@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 
 def handle_echo(arguments):
     print(" ".join(arguments))
@@ -53,6 +54,27 @@ def handle_type(arguments):
 def error_msg(command_name):
     print(f"{command_name}: command not found")
 
+def check_external_cmd(command_name):
+    # Get PATH 
+    path_string = os.environ.get("PATH")
+
+    # If PATH is not given
+    if not path_string:
+        error_msg(command_name)
+        return
+        
+    directories = path_string.split(os.pathsep) # Forming a list of possible directories
+
+    # Searching the PATH directories to check is the file exists and is executable
+    found = False
+    for directory in directories:
+        full_path = os.path.join(directory, command_name)
+
+        if os.path.exists(full_path) and os.access(full_path, os.X_OK):
+            found = True
+            break
+    return found
+
 COMMAND_MAP = {
     "echo": handle_echo,
     "exit": handle_exit,
@@ -82,6 +104,9 @@ def main():
 
         if command_function:
             command_function(arguments)
+        elif check_external_cmd(command_name):
+            subprocess.run(parts)
+            
         else:
             error_msg(command_name)
 
