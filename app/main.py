@@ -51,6 +51,10 @@ def handle_type(arguments):
         if not found:
             print(f"{arg}: not found")
 
+def handle_pwd(_):
+    current_dir = os.getcwd()
+    print(current_dir)
+
 def error_msg(command_name):
     print(f"{command_name}: command not found")
 
@@ -78,7 +82,8 @@ def check_external_cmd(command_name):
 COMMAND_MAP = {
     "echo": handle_echo,
     "exit": handle_exit,
-    "type": handle_type
+    "type": handle_type,
+    "pwd" : handle_pwd
 }
 
 def main():
