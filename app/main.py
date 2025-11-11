@@ -55,6 +55,15 @@ def handle_pwd(_):
     current_dir = os.getcwd()
     print(current_dir)
 
+def handle_cd(argumnets):
+
+    path = os.path.expanduser("".join(argumnets))
+
+    if os.path.exists(path):
+        os.chdir(path)
+    else:
+        print(f"cd: {path}: No such file or directory")
+
 def error_msg(command_name):
     print(f"{command_name}: command not found")
 
@@ -83,7 +92,8 @@ COMMAND_MAP = {
     "echo": handle_echo,
     "exit": handle_exit,
     "type": handle_type,
-    "pwd" : handle_pwd
+    "pwd" : handle_pwd,
+    "cd" : handle_cd
 }
 
 def main():
