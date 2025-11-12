@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import shlex
 
 def handle_echo(arguments):
     print(" ".join(arguments))
@@ -110,7 +111,7 @@ def main():
             continue
 
         # Splitting the Input into a list
-        parts = user_command.split()
+        parts = shlex.split(user_command)
         command_name = parts[0]
         arguments = parts[1:]
 
