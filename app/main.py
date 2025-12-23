@@ -10,26 +10,40 @@ def get_redirection_info(parts) :
     Returns (cleaned_parts, file_handle)
     """
 
+    stdout_handle = None
+    stderr_handle = None
+
+    cleaned_parts = parts[:]
+
     operators = [">", "1>"] # Defining Operators
 
-    for op in operators :
-        if op in parts :
-            idx = parts.index(op) 
-            try :
-                filename = parts[idx + 1] 
-                file_handle = open(filename, "w") # Open for writing (creates if missing, overwrites if exists)
+    if "2>" in cleaned_parts :
+        idx = cleaned_parts.index("2>")
+        filename = cleaned_parts[idx + 1]
+        stderr_handle = open(filename, "w")
 
-                cleaned_parts = parts[:idx] + parts[idx+2:] # Remove the operator and the filename from the parts list
+        cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
+
+    for op in operators :
+        if op in cleaned_parts :
+            idx = cleaned_parts.index(op) 
+            filename = cleaned_parts[idx + 1] 
+            stdout_handle = open(filename, "w") # Open for writing (creates if missing, overwrites if exists)
+
+            cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
                                                             # e.g. ['echo', 'hi', '>', 'out.txt'] -> ['echo', 'hi']
-                return cleaned_parts , file_handle
-            except :
-                return parts, None # Handle cases where user typed '>' but no filename
-    return parts, None
+            break
+
+    return cleaned_parts, stdout_handle, stderr_handle
 
 def handle_echo(arguments):
     print(" ".join(arguments))
 
 def handle_exit(arguments):
+    """
+    Weird Logic for some reson
+    """
+
     if '0' in arguments:
         # print("Exiting with status 0 (success)")
         sys.exit(0)
@@ -137,7 +151,7 @@ def main():
         # Splitting the Input into a list
         parts = shlex.split(user_command)
 
-        cleaned_parts, out_file = get_redirection_info(parts)
+        cleaned_parts, out_file , err_file = get_redirection_info(parts)
 
         command_name = cleaned_parts[0]
         arguments = cleaned_parts[1:]
@@ -146,18 +160,18 @@ def main():
         command_function = COMMAND_MAP.get(command_name)
 
         if command_function:
-            with contextlib.redirect_stdout(out_file or sys.stdout) :
+            with contextlib.redirect_stdout(out_file or sys.stdout), contextlib.redirect_stderr(err_file or sys.stderr) :
                 command_function(arguments)
 
         elif check_external_cmd(command_name):
-            subprocess.run(cleaned_parts, stdout=out_file)
-
-            if out_file:
-                out_file.close()
+            subprocess.run(cleaned_parts, stdout=out_file, stderr=err_file)
             
         else:
             error_msg(command_name)
 
+        for handle in [out_file, err_file] :
+            if handle :
+                handle.close()
 
 if __name__ == "__main__":
     main()
