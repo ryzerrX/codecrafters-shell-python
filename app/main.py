@@ -2,6 +2,29 @@ import sys
 import os
 import subprocess
 import shlex
+import contextlib
+
+def get_redirection_info(parts) : 
+    """
+    Checks for redirection operators.
+    Returns (cleaned_parts, file_handle)
+    """
+
+    operators = [">", "1>"] # Defining Operators
+
+    for op in operators :
+        if op in parts :
+            idx = parts.index(op) 
+            try :
+                filename = parts[idx + 1] 
+                file_handle = open(filename, "w") # Open for writing (creates if missing, overwrites if exists)
+
+                cleaned_parts = parts[:idx] + parts[idx+2:] # Remove the operator and the filename from the parts list
+                                                            # e.g. ['echo', 'hi', '>', 'out.txt'] -> ['echo', 'hi']
+                return cleaned_parts , file_handle
+            except :
+                return parts, None # Handle cases where user typed '>' but no filename
+    return parts, None
 
 def handle_echo(arguments):
     print(" ".join(arguments))
@@ -14,7 +37,8 @@ def handle_exit(arguments):
         # print("Exiting with status 1 (error)")
         sys.exit(1)
     else:
-        print("invalid argument")
+        # print("invalid argument")
+        sys.exit(0)
 
 def handle_type(arguments):
         # If no argument was given
@@ -36,7 +60,7 @@ def handle_type(arguments):
             print(f"{arg}: not found")
             return
         
-        directories = path_string.split(os.pathsep) # Forming a list of possible directories
+        directories = path_string.split(os.pathsep) # Forming a list of possible directories, We can use {os.path.split} instead
 
         # Searching the PATH directories to check is the file exists and is executable
         found = False
@@ -112,16 +136,24 @@ def main():
 
         # Splitting the Input into a list
         parts = shlex.split(user_command)
-        command_name = parts[0]
-        arguments = parts[1:]
+
+        cleaned_parts, out_file = get_redirection_info(parts)
+
+        command_name = cleaned_parts[0]
+        arguments = cleaned_parts[1:]
 
         # Finding the Command Function
         command_function = COMMAND_MAP.get(command_name)
 
         if command_function:
-            command_function(arguments)
+            with contextlib.redirect_stdout(out_file or sys.stdout) :
+                command_function(arguments)
+
         elif check_external_cmd(command_name):
-            subprocess.run(parts)
+            subprocess.run(cleaned_parts, stdout=out_file)
+
+            if out_file:
+                out_file.close()
             
         else:
             error_msg(command_name)
