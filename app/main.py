@@ -25,6 +25,13 @@ def get_redirection_info(parts) :
 
         cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
 
+    if "2>>" in cleaned_parts :
+        idx = cleaned_parts.index("2>>")
+        filename = cleaned_parts[idx + 1]
+        stderr_handle = open(filename, "a")
+
+        cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
+
     for op in operators :
         if op in cleaned_parts :
             idx = cleaned_parts.index(op) 
