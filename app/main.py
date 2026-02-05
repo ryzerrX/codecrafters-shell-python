@@ -25,7 +25,7 @@ def get_redirection_info(parts) :
         "2>>": {"mode": "a", "stream": "stderr"}
     }
     
-    for op, rule in operators :
+    for op, rule in operators.items() :
         while op in cleaned_parts :
             idx = cleaned_parts.index(op) 
             filename = cleaned_parts[idx + 1] 
