@@ -15,44 +15,90 @@ def get_redirection_info(parts) :
 
     cleaned_parts = parts[:]
 
-    operators = [">", "1>"] # Defining Operators
-    operators2 = [">>", "1>>"]
-
-    if "2>" in cleaned_parts :
-        idx = cleaned_parts.index("2>")
-        filename = cleaned_parts[idx + 1]
-        stderr_handle = open(filename, "w")
-
-        cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
-
-    if "2>>" in cleaned_parts :
-        idx = cleaned_parts.index("2>>")
-        filename = cleaned_parts[idx + 1]
-        stderr_handle = open(filename, "a")
-
-        cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
-
-    for op in operators :
-        if op in cleaned_parts :
-            idx = cleaned_parts.index(op) 
-            filename = cleaned_parts[idx + 1] 
-            stdout_handle = open(filename, "w") # Open for writing (creates if missing, overwrites if exists)
-
-            cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
-                                                            # e.g. ['echo', 'hi', '>', 'out.txt'] -> ['echo', 'hi']
-            break
+    # Defining Operators
+    operators = {
+        ">":   {"mode": "w", "stream": "stdout"},
+        "1>":  {"mode": "w", "stream": "stdout"},
+        ">>":  {"mode": "a", "stream": "stdout"},
+        "1>>": {"mode": "a", "stream": "stdout"},
+        "2>":  {"mode": "w", "stream": "stderr"},
+        "2>>": {"mode": "a", "stream": "stderr"}
+    }
     
-    for op in operators2 :
-        if op in cleaned_parts :
+    for op, rule in operators :
+        while op in cleaned_parts :
             idx = cleaned_parts.index(op) 
             filename = cleaned_parts[idx + 1] 
-            stdout_handle = open(filename, "a") # Open for appending (creates if missing, appends if exists)
 
-            cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
-                                                            # e.g. ['echo', 'hi', '>>', 'out.txt'] -> ['echo', 'hi']
+            mode = rule["mode"]
+            stream = rule["stream"]
+
+            if stream == "stdout" :
+                stdout_handle = open(filename, mode) # Open for writing (creates if missing, overwrites if exists)
+                
+                cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
+                                                                            # e.g. ['echo', 'hi', '>', 'out.txt'] -> ['echo', 'hi']
+
+            if stream == "stderr" :
+               stderr_handle = open(filename, mode)
+
+               cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] 
+
             break
+
+
 
     return cleaned_parts, stdout_handle, stderr_handle
+
+# def get_redirection_info(parts) : 
+#     """
+#     Checks for redirection operators.
+#     Returns (cleaned_parts, file_handle)
+#     """
+
+#     stdout_handle = None
+#     stderr_handle = None
+
+#     cleaned_parts = parts[:]
+
+#     operators = [">", "1>"] # Defining Operators
+#     operators2 = [">>", "1>>"]
+
+#     if "2>" in cleaned_parts :
+#         idx = cleaned_parts.index("2>")
+#         filename = cleaned_parts[idx + 1]
+#         stderr_handle = open(filename, "w")
+
+#         cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
+
+#     if "2>>" in cleaned_parts :
+#         idx = cleaned_parts.index("2>>")
+#         filename = cleaned_parts[idx + 1]
+#         stderr_handle = open(filename, "a")
+
+#         cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
+
+#     for op in operators :
+#         if op in cleaned_parts :
+#             idx = cleaned_parts.index(op) 
+#             filename = cleaned_parts[idx + 1] 
+#             stdout_handle = open(filename, "w") # Open for writing (creates if missing, overwrites if exists)
+
+#             cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
+#                                                             # e.g. ['echo', 'hi', '>', 'out.txt'] -> ['echo', 'hi']
+#             break
+    
+#     for op in operators2 :
+#         if op in cleaned_parts :
+#             idx = cleaned_parts.index(op) 
+#             filename = cleaned_parts[idx + 1] 
+#             stdout_handle = open(filename, "a") # Open for appending (creates if missing, appends if exists)
+
+#             cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
+#                                                             # e.g. ['echo', 'hi', '>>', 'out.txt'] -> ['echo', 'hi']
+#             break
+
+#     return cleaned_parts, stdout_handle, stderr_handle
 
 def handle_echo(arguments):
     print(" ".join(arguments))
