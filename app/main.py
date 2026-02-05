@@ -16,6 +16,7 @@ def get_redirection_info(parts) :
     cleaned_parts = parts[:]
 
     operators = [">", "1>"] # Defining Operators
+    operators2 = [">>", "1>>"]
 
     if "2>" in cleaned_parts :
         idx = cleaned_parts.index("2>")
@@ -32,6 +33,16 @@ def get_redirection_info(parts) :
 
             cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
                                                             # e.g. ['echo', 'hi', '>', 'out.txt'] -> ['echo', 'hi']
+            break
+    
+    for op in operators2 :
+        if op in cleaned_parts :
+            idx = cleaned_parts.index(op) 
+            filename = cleaned_parts[idx + 1] 
+            stdout_handle = open(filename, "a") # Open for appending (creates if missing, appends if exists)
+
+            cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
+                                                            # e.g. ['echo', 'hi', '>>', 'out.txt'] -> ['echo', 'hi']
             break
 
     return cleaned_parts, stdout_handle, stderr_handle
