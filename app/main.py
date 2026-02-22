@@ -3,6 +3,7 @@ import os
 import subprocess
 import shlex
 import contextlib
+import readline
 
 def get_redirection_info(parts) : 
     """
@@ -44,61 +45,7 @@ def get_redirection_info(parts) :
 
                cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] 
 
-            break
-
-
-
     return cleaned_parts, stdout_handle, stderr_handle
-
-# def get_redirection_info(parts) : 
-#     """
-#     Checks for redirection operators.
-#     Returns (cleaned_parts, file_handle)
-#     """
-
-#     stdout_handle = None
-#     stderr_handle = None
-
-#     cleaned_parts = parts[:]
-
-#     operators = [">", "1>"] # Defining Operators
-#     operators2 = [">>", "1>>"]
-
-#     if "2>" in cleaned_parts :
-#         idx = cleaned_parts.index("2>")
-#         filename = cleaned_parts[idx + 1]
-#         stderr_handle = open(filename, "w")
-
-#         cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
-
-#     if "2>>" in cleaned_parts :
-#         idx = cleaned_parts.index("2>>")
-#         filename = cleaned_parts[idx + 1]
-#         stderr_handle = open(filename, "a")
-
-#         cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:]
-
-#     for op in operators :
-#         if op in cleaned_parts :
-#             idx = cleaned_parts.index(op) 
-#             filename = cleaned_parts[idx + 1] 
-#             stdout_handle = open(filename, "w") # Open for writing (creates if missing, overwrites if exists)
-
-#             cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
-#                                                             # e.g. ['echo', 'hi', '>', 'out.txt'] -> ['echo', 'hi']
-#             break
-    
-#     for op in operators2 :
-#         if op in cleaned_parts :
-#             idx = cleaned_parts.index(op) 
-#             filename = cleaned_parts[idx + 1] 
-#             stdout_handle = open(filename, "a") # Open for appending (creates if missing, appends if exists)
-
-#             cleaned_parts = cleaned_parts[:idx] + cleaned_parts[idx+2:] # Remove the operator and the filename from the parts list
-#                                                             # e.g. ['echo', 'hi', '>>', 'out.txt'] -> ['echo', 'hi']
-#             break
-
-#     return cleaned_parts, stdout_handle, stderr_handle
 
 def handle_echo(arguments):
     print(" ".join(arguments))
@@ -199,14 +146,37 @@ COMMAND_MAP = {
     "cd" : handle_cd
 }
 
+def completer(text, state):
+
+    builtins = list(COMMAND_MAP.keys())
+
+    # 1. Filter the COMMANDS list. Find all words that start with 'text'.
+    #    (Hint: Python string methods like .startswith() are great here).
+    
+    matches = []
+    for cmd in builtins:
+        if cmd.startswith(text):
+            matches.append(cmd + " ")
+
+
+    # 2. Try to return the item from the filtered list at index 'state'.
+    # 3. If 'state' is larger than your filtered list, catch the error 
+    #    and return None to tell readline to stop.
+
+    return matches[state] if state < len(matches) else None
+
+readline.set_completer(completer)           # Register our function with readline
+readline.parse_and_bind("tab: complete")    # Tell readline to use the Tab key for completion
+
+
 def main():
     while True:
         # TODO: Uncomment the code below to pass the first stage
-        sys.stdout.write("$ ")
-        pass
+        # sys.stdout.write("$ ")
+        # pass
 
         # take user i/p
-        user_command = input()
+        user_command = input("$ ")
 
         # Skip empty input
         if not user_command:
