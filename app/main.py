@@ -148,17 +148,22 @@ COMMAND_MAP = {
 
 def external_cmds_matches(text):
     matches = []
-    path = os.environ.get("PATH").split(os.pathsep)
+    path_list = os.environ.get("PATH", "").split(os.pathsep)
 
-    for directories in path:
-        if not os.path.isdir(path):
+    for directories in path_list:
+        if not os.path.isdir(directories):
             continue
-        for items in  os.listdir(directories):
-            if items.startswith(text):
-                full_path = os.path.join(directories, items)
-                if os.access(full_path, os.X_OK):
-                    matches.append(items)
-    
+
+        try:
+            for items in  os.listdir(directories):
+                if items.startswith(text):
+                    full_path = os.path.join(directories, items)
+                    if os.access(full_path, os.X_OK):
+                        matches.append(items)
+
+        except PermissionError:
+            # Some system folders might be restricted
+            continue
     return sorted(list(set(matches)))
 
         
