@@ -146,6 +146,22 @@ COMMAND_MAP = {
     "cd" : handle_cd
 }
 
+def external_cmds_matches(text):
+    matches = []
+    path = os.environ.get("PATH").split(os.pathsep)
+
+    for directories in path:
+        
+        for items in  os.listdir(directories):
+            if items.startswith(text):
+                full_path = os.path.join(path, items)
+                # if os.access(full_path, os.X_OK):
+                matches.append(items)
+    
+    return sorted(list(set(matches)))
+
+        
+
 def completer(text, state):
 
     builtins = list(COMMAND_MAP.keys())
@@ -157,7 +173,7 @@ def completer(text, state):
     for cmd in builtins:
         if cmd.startswith(text):
             matches.append(cmd + " ")
-
+    matches += external_cmds_matches(text)
 
     # 2. Try to return the item from the filtered list at index 'state'.
     # 3. If 'state' is larger than your filtered list, catch the error 
@@ -165,7 +181,7 @@ def completer(text, state):
 
     return matches[state] if state < len(matches) else None
 
-    
+
 
 readline.set_completer(completer)           # Register our function with readline
 readline.parse_and_bind("tab: complete")    # Tell readline to use the Tab key for completion
