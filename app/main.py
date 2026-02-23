@@ -170,23 +170,24 @@ def external_cmds_matches(text):
 
 def completer(text, state):
 
-    builtins = list(COMMAND_MAP.keys())
+    # It's better to build the full list of matches only on state 0
+    if state == 0:
+        builtins = list(COMMAND_MAP.keys())
+        
+        # Combine built-ins and external commands
+        all_possibilities = builtins + external_cmds_matches(text)
+        
+        # Filter, de-duplicate, and sort
+        completer.matches = sorted({
+            cmd for cmd in all_possibilities if cmd.startswith(text)
+        })
 
-    # 1. Filter the COMMANDS list. Find all words that start with 'text'.
-    #    (Hint: Python string methods like .startswith() are great here).
-    
-    matches = []
-    for cmd in builtins:
-        if cmd.startswith(text):
-            matches.append(cmd + " ")
-    matches += external_cmds_matches(text)
-
-    # 2. Try to return the item from the filtered list at index 'state'.
-    # 3. If 'state' is larger than your filtered list, catch the error 
-    #    and return None to tell readline to stop.
-
-    return matches[state] if state < len(matches) else None
-
+    try:
+        # Return the match for the current state
+        # Note: We add a space so the user can immediately type arguments
+        return completer.matches[state] + " "
+    except (IndexError, AttributeError):
+        return None
 
 
 readline.set_completer(completer)           # Register our function with readline
