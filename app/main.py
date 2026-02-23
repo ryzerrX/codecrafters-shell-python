@@ -165,15 +165,14 @@ def completer(text, state):
 
     return matches[state] if state < len(matches) else None
 
+    
+
 readline.set_completer(completer)           # Register our function with readline
 readline.parse_and_bind("tab: complete")    # Tell readline to use the Tab key for completion
 
 
 def main():
     while True:
-        # TODO: Uncomment the code below to pass the first stage
-        # sys.stdout.write("$ ")
-        # pass
 
         # take user i/p
         user_command = input("$ ")
