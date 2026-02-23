@@ -151,12 +151,13 @@ def external_cmds_matches(text):
     path = os.environ.get("PATH").split(os.pathsep)
 
     for directories in path:
-        
+        if not os.path.isdir(path):
+            continue
         for items in  os.listdir(directories):
             if items.startswith(text):
                 full_path = os.path.join(path, items)
-                # if os.access(full_path, os.X_OK):
-                matches.append(items)
+                if os.access(full_path, os.X_OK):
+                    matches.append(items)
     
     return sorted(list(set(matches)))
 
