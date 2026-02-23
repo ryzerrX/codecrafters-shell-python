@@ -155,7 +155,7 @@ def external_cmds_matches(text):
             continue
         for items in  os.listdir(directories):
             if items.startswith(text):
-                full_path = os.path.join(path, items)
+                full_path = os.path.join(directories, items)
                 if os.access(full_path, os.X_OK):
                     matches.append(items)
     
