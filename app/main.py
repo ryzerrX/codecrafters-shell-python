@@ -166,8 +166,6 @@ def external_cmds_matches(text):
             continue
     return sorted(list(set(matches)))
 
-        
-
 def completer(text, state):
 
     # It's better to build the full list of matches only on state 0
@@ -189,10 +187,118 @@ def completer(text, state):
     except (IndexError, AttributeError):
         return None
 
-
 readline.set_completer(completer)           # Register our function with readline
 readline.parse_and_bind("tab: complete")    # Tell readline to use the Tab key for completion
 
+def handle_pipelines(parts):
+
+    # 1. Split 'parts' into a list of separate commands
+    commands = []
+    temp_cmd_bucket = []
+
+    for part in parts:
+        if part == '|':
+            if not temp_cmd_bucket:
+                print("shell: syntax error near unexpected token '|'")
+            commands.append(temp_cmd_bucket)
+            temp_cmd_bucket = []
+        
+        else:
+            temp_cmd_bucket.append(part)
+    
+    if temp_cmd_bucket:
+        commands.append(temp_cmd_bucket)
+    else :
+        print("shell: syntax error near unexpected token `|'")
+        return
+    
+
+    # 2. Execute the Pipeline
+    in_fd = 0 # Input File Descriptor - Remembers where the current command should read from. Acts as a memory variable
+    pids = []
+
+    for i, cmd_parts in enumerate(commands):
+        is_last = (i == len(commands) - 1)
+
+        # Process any > {standard} or < {redirection} symbols for this specific command
+        cleaned_parts, out_file , err_file = get_redirection_info(cmd_parts)
+        command_name = cleaned_parts[0]
+        arguments = cleaned_parts[1:]
+
+        # Create a pipe for the next command(unless this is the last one)
+        if not is_last:
+            r, w = os.pipe() # os.pipe() gives us r (read end) and w (write end).
+        
+        pid = os.fork() # Process is split into :
+                      # 1) Child - In the Child, pid equals 0. The child enters the {if pid == 0:} block
+                      # 2) Parent - In the Parent (your shell), pid is a real number (like 4591). The parent skips to the else: block.
+
+        if pid == 0:
+
+            # 1. Hook up the Pipe Input (The left side of the pipe):
+            if in_fd != 0:
+                os.dup2(in_fd, 0)   # This tells the OS, "Take my Standard Input (0) and forcefully point it to whatever in_fd is looking at."
+                os.close(in_fd)     # We don't need the current in_fd anymore because 0 is doing the job. We close it to keep the FD table clean.
+            
+            # 2. Hook up the Pipe Output (The right side of the pipe):
+            if not is_last:
+                os.dup2(w, 1)   # This tells the OS, "Take my Standard Output (1) and forcefully point it to w". Now, if an command prints anything, it goes straight into the new pipe.
+                os.close(r)     
+                os.close(w)     # The child closes the original pipe variables. It must close r because this child is only writing, not reading from this new pipe. It closes w because FD 1 is already handling the writing.
+
+            # 3. Apply user file redirections (e.g., > or < overrides the pipe)
+            if out_file:
+                os.dup2(out_file.fileno(), 1)
+            if err_file:
+                os.dup2(err_file.fileno(), 2)
+
+            # 4. Execute the command (Built-in OR External)
+            command_function = COMMAND_MAP.get(command_name)
+            
+            if command_function:
+                # IT'S A BUILT-IN! 
+                # Just call the python function. Since FD 1 is redirected to the pipe,
+                # any print() inside this function flows into the pipe.
+                try:
+                    command_function(arguments)
+                    os._exit(0) # Crucial: Kill the child after the built-in finishes!
+                except Exception as e:
+                    print(f"shell: builtin error: {e}", file=sys.stderr)
+                    os._exit(1)
+
+            elif check_external_cmd(command_name):
+                # IT'S AN EXTERNAL COMMAND!
+                try:
+                    os.execvp(command_name, cleaned_parts)
+                except Exception as e:
+                    print(f"shell: {command_name}: {e}", file=sys.stderr)
+                    os._exit(1)
+            else:
+                print(f"shell: {command_name}: command not found", file=sys.stderr)
+                os._exit(1)
+
+        else:   # i have to understand this part
+            # ==========================================
+            # PARENT PROCESS (Your main shell)
+            # ==========================================
+            pids.append(pid)
+            
+            # Close the read end of the PREVIOUS pipe
+            if in_fd != 0:
+                os.close(in_fd)
+                
+            # Set up the read end for the NEXT command
+            if not is_last:
+                os.close(w) # Parent must close write end!
+                in_fd = r
+            
+            # Close any files opened by get_redirection_info (the child is using them now)
+            if out_file: out_file.close()
+            if err_file: err_file.close()
+
+    # Wait for all commands in the pipeline to finish
+    for pid in pids:
+        os.waitpid(pid, 0)
 
 def main():
     while True:
@@ -206,6 +312,11 @@ def main():
 
         # Splitting the Input into a list
         parts = shlex.split(user_command)
+
+        # Handles Command Pipelines
+        if '|' in parts:
+            handle_pipelines(parts)
+            continue
 
         cleaned_parts, out_file , err_file = get_redirection_info(parts)
 
