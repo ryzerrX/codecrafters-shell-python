@@ -5,6 +5,8 @@ import shlex
 import contextlib
 import readline
 
+HISTORY = []
+
 def get_redirection_info(parts) : 
     """
     Checks for redirection operators.
@@ -114,7 +116,9 @@ def handle_cd(argumnets):
     else:
         print(f"cd: {path}: No such file or directory")
 
-# def handle_cd(arguments) :
+def handle_history(arguments) :
+    for index, user_commands in enumerate(HISTORY):
+        print(f"{index+1}. {user_commands}")
 
 
 def error_msg(command_name):
@@ -147,8 +151,13 @@ COMMAND_MAP = {
     "type": handle_type,
     "pwd" : handle_pwd,
     "cd" : handle_cd,
-    "history" : handle_cd
+    "history" : handle_history
 }
+
+def history_logic(user_command) :
+    global HISTORY
+    HISTORY.append(user_command)
+
 
 def external_cmds_matches(text):
     matches = []
@@ -314,6 +323,7 @@ def main():
         # take user i/p
         user_command = input("$ ")
 
+        history_logic(user_command)
         # Skip empty input
         if not user_command:
             continue
