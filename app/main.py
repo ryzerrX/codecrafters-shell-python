@@ -114,6 +114,9 @@ def handle_cd(argumnets):
     else:
         print(f"cd: {path}: No such file or directory")
 
+# def handle_cd(arguments) :
+
+
 def error_msg(command_name):
     print(f"{command_name}: command not found")
 
@@ -143,7 +146,8 @@ COMMAND_MAP = {
     "exit": handle_exit,
     "type": handle_type,
     "pwd" : handle_pwd,
-    "cd" : handle_cd
+    "cd" : handle_cd,
+    "history" : handle_cd
 }
 
 def external_cmds_matches(text):
@@ -277,11 +281,15 @@ def handle_pipelines(parts):
                 print(f"shell: {command_name}: command not found", file=sys.stderr)
                 os._exit(1)
 
-        else:   # i have to understand this part
-            # ==========================================
-            # PARENT PROCESS (Your main shell)
-            # ==========================================
-            pids.append(pid)
+        else:   # PARENT PROCESS (Your main shell)
+
+            # Every time os.fork() creates a child, the OS assigns it a unique 
+            # Process ID (PID). We append this PID to our 'pids' list.
+            # Once the main loop finishes setting up all the pipes and children,
+            # the parent shell will loop through this list using os.waitpid() 
+            # to ensure every command in the pipeline fully completes before 
+            # we print the next '$ ' prompt for the user. {This is the use of [pids.append(pid)]} 
+            pids.append(pid)    
             
             # Close the read end of the PREVIOUS pipe
             if in_fd != 0:
