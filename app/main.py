@@ -118,7 +118,7 @@ def handle_cd(argumnets):
 
 def handle_history(arguments) :
     for index, user_commands in enumerate(HISTORY):
-        print(f"{index+1}. {user_commands}")
+        print(index+1," ",user_commands)
 
 
 def error_msg(command_name):
